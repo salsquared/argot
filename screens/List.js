@@ -3,6 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
+import { LANGUAGES } from '../utils/languages';
 
 export default function List() {
     const [words, setWords] = useState([]);
@@ -52,8 +53,15 @@ export default function List() {
             onLongPress={() => deleteWord(item.id)}
         >
             <View className="flex-row justify-between items-start">
-                <View className="flex-1">
-                    <Text className="text-white text-xl font-bold mb-1 text-blue-400">{item.word}</Text>
+                <View className="flex-1 mr-2">
+                    <View className="flex-row items-center mb-1">
+                        <Text className="text-white text-xl font-bold text-blue-400 mr-2">{item.word}</Text>
+                        <View className="bg-gray-700 px-2 py-0.5 rounded-md">
+                            <Text className="text-gray-300 text-xs font-bold">
+                                {LANGUAGES.find(l => l.value === item.language)?.flag || '🇬🇧'} {item.language || 'EN'}
+                            </Text>
+                        </View>
+                    </View>
                     <Text className="text-gray-300 text-base">{item.definition}</Text>
                 </View>
             </View>

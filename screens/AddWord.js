@@ -19,6 +19,8 @@ export default function AddWord({ navigation }) {
     const [availableDefinitions, setAvailableDefinitions] = useState([]);
     const [showDefinitionModal, setShowDefinitionModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+    const [lookupError, setLookupError] = useState(null);
 
     const filteredLanguages = useMemo(() => {
         return LANGUAGES.filter(lang =>
@@ -29,13 +31,26 @@ export default function AddWord({ navigation }) {
 
     // Debounce effect to fetch definition
     useEffect(() => {
+        const trimmedWord = word.trim();
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        if (trimmedWord.length === 0) {
+            setDefinition('');
+            setPartOfSpeech('');
+            setAvailableDefinitions([]);
+            setLookupError(null);
+            return;
+        }
+
         const fetchDefinition = async () => {
-            const trimmedWord = word.trim();
             if (trimmedWord.length < 2 || selectedLanguage !== 'EN') return;
 
             setIsLoading(true);
+            setLookupError(null);
+            setAvailableDefinitions([]);
             try {
-                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${trimmedWord}`);
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${trimmedWord}`, { signal });
                 const data = await response.json();
 
                 if (Array.isArray(data) && data.length > 0) {
@@ -69,20 +84,31 @@ export default function AddWord({ navigation }) {
                         setPartOfSpeech(definitions[0].partOfSpeech);
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }
+                } else {
+                    setLookupError("Word not found");
                 }
             } catch (error) {
-                // Silent fail - user can still type manually
+                if (error.name === 'AbortError') {
+                    console.log("Fetch aborted");
+                    return;
+                }
                 console.log("Error fetching definition:", error);
+                setLookupError("Network error");
             } finally {
-                setIsLoading(false);
+                if (!signal.aborted) {
+                    setIsLoading(false);
+                }
             }
         };
 
         const timeoutId = setTimeout(() => {
-            if (word) fetchDefinition();
+            if (trimmedWord.length >= 2) fetchDefinition();
         }, 1000); // 1 second debounce
 
-        return () => clearTimeout(timeoutId);
+        return () => {
+            clearTimeout(timeoutId);
+            controller.abort();
+        };
     }, [word, selectedLanguage]);
 
     const saveWord = async () => {
@@ -108,6 +134,17 @@ export default function AddWord({ navigation }) {
             const existingData = await AsyncStorage.getItem('vocabList');
             const words = existingData ? JSON.parse(existingData) : [];
 
+            // Check for duplicates
+            const isDuplicate = words.some(existingItem =>
+                existingItem.word.toLowerCase() === formattedWord.toLowerCase() &&
+                existingItem.definition === definition.trim()
+            );
+
+            if (isDuplicate) {
+                setShowDuplicateModal(true);
+                return;
+            }
+
             const updatedWords = [newEntry, ...words];
             await AsyncStorage.setItem('vocabList', JSON.stringify(updatedWords));
 
@@ -121,7 +158,7 @@ export default function AddWord({ navigation }) {
     };
 
     const formContent = (
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-start', padding: 24 }} keyboardShouldPersistTaps="handled">
             <View className="flex-row justify-between items-center mb-2">
                 <Text className="text-white text-lg font-bold">Word</Text>
                 <TouchableOpacity
@@ -150,12 +187,15 @@ export default function AddWord({ navigation }) {
 
             <View className="flex-row justify-between mb-2">
                 <Text className="text-white text-lg font-bold">Definition</Text>
-                {availableDefinitions.length > 1 && (
+                {isLoading ? (
+                    <Text className="text-blue-400 text-sm italic">Searching...</Text>
+                ) : availableDefinitions.length > 1 ? (
                     <TouchableOpacity onPress={() => setShowDefinitionModal(true)}>
                         <Text className="text-blue-400 text-sm font-bold">Show all {availableDefinitions.length} definitions</Text>
                     </TouchableOpacity>
-                )}
-                {isLoading && <Text className="text-blue-400 text-sm italic">Searching...</Text>}
+                ) : lookupError ? (
+                    <Text className="text-red-400 text-sm italic">{lookupError}</Text>
+                ) : null}
             </View>
 
             <TextInput
@@ -313,6 +353,22 @@ export default function AddWord({ navigation }) {
                             setPartOfSpeech('');
                             setShowSuccessModal(false);
                         }
+                    }
+                ]}
+            />
+
+            <CustomModal
+                visible={showDuplicateModal}
+                title="Duplicate Entry"
+                icon="alert-triangle"
+                iconColor="#f59e0b"
+                message="This word and definition are already in your list. Please select a different definition or go back."
+                onClose={() => setShowDuplicateModal(false)}
+                buttons={[
+                    {
+                        text: 'Return',
+                        type: 'secondary',
+                        onPress: () => setShowDuplicateModal(false)
                     }
                 ]}
             />

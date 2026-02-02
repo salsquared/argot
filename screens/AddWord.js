@@ -111,12 +111,24 @@ export default function AddWord({ navigation }) {
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert('Success', 'Word added to your list!', [
-                { text: 'OK', onPress: () => navigation.goBack() }
+                {
+                    text: 'Main Menu',
+                    onPress: () => {
+                        setWord('');
+                        setDefinition('');
+                        setPartOfSpeech('');
+                        navigation.goBack();
+                    }
+                },
+                {
+                    text: 'New Word',
+                    onPress: () => {
+                        setWord('');
+                        setDefinition('');
+                        setPartOfSpeech('');
+                    }
+                }
             ]);
-
-            setWord('');
-            setDefinition('');
-            setPartOfSpeech('');
 
         } catch (e) {
             Alert.alert('Error', 'Failed to save word.');

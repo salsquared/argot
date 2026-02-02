@@ -21,6 +21,60 @@ export default function List({ navigation }) {
     const [editingItem, setEditingItem] = useState(null);
     const [editWordText, setEditWordText] = useState('');
     const [editDefinitionText, setEditDefinitionText] = useState('');
+    const [editPartOfSpeech, setEditPartOfSpeech] = useState('');
+
+    // Edit Mode Definition Fetching
+    const [availableEditDefinitions, setAvailableEditDefinitions] = useState([]);
+    const [isFetchingDefinitions, setIsFetchingDefinitions] = useState(false);
+    const [showEditDefinitionModal, setShowEditDefinitionModal] = useState(false);
+
+    // Fetch definitions when editWordText changes (debounced)
+    useEffect(() => {
+        const fetchEditDefinition = async () => {
+            const trimmedWord = editWordText.trim();
+            // Don't fetch if empty, too short, or same as original (unless we want to re-suggest?)
+            // Actually, if they just opened it, it matches original. We might not want to auto-overwrite, 
+            // but we want to populate valid options.
+            if (trimmedWord.length < 2) return;
+
+            setIsFetchingDefinitions(true);
+            try {
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${trimmedWord}`);
+                const data = await response.json();
+
+                if (Array.isArray(data) && data.length > 0) {
+                    const definitions = [];
+                    data.forEach(entry => {
+                        if (entry.meanings) {
+                            entry.meanings.forEach(meaning => {
+                                meaning.definitions.forEach(def => {
+                                    definitions.push({
+                                        definition: def.definition,
+                                        partOfSpeech: meaning.partOfSpeech,
+                                        example: def.example
+                                    });
+                                });
+                            });
+                        }
+                    });
+                    setAvailableEditDefinitions(definitions);
+                } else {
+                    setAvailableEditDefinitions([]);
+                }
+            } catch (error) {
+                console.log("Error fetching edit definition:", error);
+                setAvailableEditDefinitions([]);
+            } finally {
+                setIsFetchingDefinitions(false);
+            }
+        };
+
+        const timeoutId = setTimeout(() => {
+            if (editModalVisible && editWordText) fetchEditDefinition();
+        }, 1000);
+
+        return () => clearTimeout(timeoutId);
+    }, [editWordText, editModalVisible]);
 
     const loadWords = async () => {
         try {
@@ -107,6 +161,8 @@ export default function List({ navigation }) {
         setEditingItem(item);
         setEditWordText(item.word);
         setEditDefinitionText(item.definition);
+        setEditPartOfSpeech(item.partOfSpeech);
+        setAvailableEditDefinitions([]); // Reset
         setEditModalVisible(true);
     };
 
@@ -115,7 +171,7 @@ export default function List({ navigation }) {
 
         const updatedWords = words.map(w =>
             w.id === editingItem.id
-                ? { ...w, word: editWordText.trim(), definition: editDefinitionText.trim() }
+                ? { ...w, word: editWordText.trim(), definition: editDefinitionText.trim(), partOfSpeech: editPartOfSpeech }
                 : w
         );
 
@@ -329,7 +385,7 @@ export default function List({ navigation }) {
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     className="flex-1 justify-end bg-black/60"
                 >
-                    <View className="bg-gray-900 rounded-t-3xl p-6 h-auto max-h-[80%]">
+                    <View className="bg-gray-900 rounded-t-3xl p-6 h-auto max-h-[90%]">
                         <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-white text-xl font-bold">Edit Word</Text>
                             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
@@ -338,13 +394,28 @@ export default function List({ navigation }) {
                         </View>
 
                         <Text className="text-gray-400 mb-2 font-bold">Word</Text>
-                        <TextInput
-                            className="bg-gray-800 text-white p-4 rounded-xl mb-4 text-lg border border-gray-700 focus:border-blue-500"
-                            value={editWordText}
-                            onChangeText={setEditWordText}
-                        />
+                        <View className="relative">
+                            <TextInput
+                                className="bg-gray-800 text-white p-4 rounded-xl mb-4 text-lg border border-gray-700 focus:border-blue-500"
+                                value={editWordText}
+                                onChangeText={setEditWordText}
+                            />
+                            {isFetchingDefinitions && (
+                                <View className="absolute right-4 top-4">
+                                    <ActivityIndicator size="small" color="#3b82f6" />
+                                </View>
+                            )}
+                        </View>
 
-                        <Text className="text-gray-400 mb-2 font-bold">Definition</Text>
+                        <View className="flex-row justify-between mb-2">
+                            <Text className="text-gray-400 font-bold">Definition</Text>
+                            {availableEditDefinitions.length > 0 && (
+                                <TouchableOpacity onPress={() => setShowEditDefinitionModal(true)}>
+                                    <Text className="text-blue-400 text-sm font-bold">Select Definition ({availableEditDefinitions.length})</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
                         <TextInput
                             className="bg-gray-800 text-white p-4 rounded-xl mb-6 text-lg border border-gray-700 h-32 focus:border-blue-500"
                             multiline
@@ -361,6 +432,56 @@ export default function List({ navigation }) {
                         </TouchableOpacity>
                     </View>
                 </KeyboardAvoidingView>
+            </Modal>
+
+            {/* Definition Selection Modal for Edit Mode */}
+            <Modal
+                visible={showEditDefinitionModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowEditDefinitionModal(false)}
+            >
+                <View className="flex-1 justify-end bg-black/50">
+                    <View className="bg-gray-900 rounded-t-3xl p-6 h-3/4">
+                        <View className="flex-row justify-between items-center mb-4">
+                            <Text className="text-white text-xl font-bold">Select Definition</Text>
+                            <TouchableOpacity onPress={() => setShowEditDefinitionModal(false)}>
+                                <Text className="text-blue-400 text-lg">Close</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text className="text-gray-400 mb-4 italic">Select definition for "{editWordText}"</Text>
+
+                        <FlatList
+                            data={availableEditDefinitions}
+                            keyExtractor={(item, index) => index.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    className={`p-4 mb-3 rounded-xl bg-gray-800 border ${editDefinitionText === item.definition ? 'border-blue-500' : 'border-gray-700'}`}
+                                    onPress={() => {
+                                        setEditDefinitionText(item.definition);
+                                        setEditPartOfSpeech(item.partOfSpeech);
+                                        setShowEditDefinitionModal(false);
+                                    }}
+                                >
+                                    <View className="flex-row items-center mb-1">
+                                        {item.partOfSpeech && (
+                                            <View className={`px-2 py-0.5 rounded-md border mr-2 ${getPosStyle(item.partOfSpeech)}`}>
+                                                <Text className={`font-bold text-xs uppercase ${getPosStyle(item.partOfSpeech).split(' ')[1]}`}>
+                                                    {item.partOfSpeech}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <Text className="text-white text-base leading-5 mb-1">{item.definition}</Text>
+                                    {item.example && (
+                                        <Text className="text-gray-500 text-sm italic">"{item.example}"</Text>
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </View>
             </Modal>
         </View>
     );

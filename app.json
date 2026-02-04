@@ -27,11 +27,11 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "owner": "hubble-labs",
     "extra": {
       "eas": {
-        "projectId": "d1875848-1f27-4459-8cc9-9f9cb48d66d6"
+        "projectId": "647c68f0-1bc2-4e8a-993e-2cc2612ff3b7"
       }
-    },
-    "owner": "hubble-labs"
+    }
   }
 }

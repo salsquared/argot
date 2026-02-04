@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { View, Text, TouchableOpacity, TextInput, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { getWords, updateWordStats } from '../utils/storage';
+import { evaluateSentence } from '../utils/gemini';
 
 export default function Quiz() {
     const navigation = useNavigation();
@@ -17,6 +18,8 @@ export default function Quiz() {
     const [feedback, setFeedback] = useState(null); // { correct: bool, message: string }
     const [quizQueue, setQuizQueue] = useState([]);
     const [sessionTotal, setSessionTotal] = useState(0);
+    const [isEvaluating, setIsEvaluating] = useState(false);
+    const [streamedFeedback, setStreamedFeedback] = useState('');
 
     // Refresh count when screen comes into focus
     // Refresh count when screen comes into focus
@@ -54,6 +57,7 @@ export default function Quiz() {
         setGameMode(selectedMode);
         setScore(0);
         setAppState('playing');
+        setIsEvaluating(false);
 
         // Generate first question from the fresh shuffled list
         generateQuestion(selectedMode, shuffled);
@@ -97,12 +101,63 @@ export default function Quiz() {
         setWords(updatedWords);
     };
 
-    const checkAnswer = (answer) => {
+    const checkAnswer = async (answer) => {
+        if (gameMode === 'sentence_builder') {
+            setSelectedAnswer(answer);
+            setIsEvaluating(true);
+            setStreamedFeedback('');
+
+            // Temporary state to show feedback area immediately while streaming
+            setAppState('feedback');
+            setFeedback({ correct: null, message: '' }); // message will be streamed
+
+            const handleStreamUpdate = (chunk) => {
+                setStreamedFeedback(prev => prev + chunk);
+            };
+
+            const handleVerdictUpdate = (isCorrect) => {
+                setFeedback(prev => ({ ...prev, correct: isCorrect }));
+                if (isCorrect) {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                } else {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                }
+            };
+
+            const result = await evaluateSentence(
+                currentQuestion.target.word,
+                currentQuestion.target.definition,
+                answer,
+                handleStreamUpdate,
+                handleVerdictUpdate
+            );
+
+            setIsEvaluating(false);
+
+            // Finalize state with the result
+            if (result.isCorrect) {
+                setScore(score + 1);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } else {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
+            updateStats(currentQuestion.target.id, result.isCorrect);
+
+            setFeedback({
+                correct: result.isCorrect,
+                message: result.isCorrect ? 'Correct!' : 'Try Again!'
+            });
+            return;
+        }
+
+        // Standard logic for other modes
         setSelectedAnswer(answer);
         const isCorrect =
             gameMode === 'written'
                 ? answer.trim().toLowerCase() === currentQuestion.target.word.toLowerCase()
                 : answer.id === currentQuestion.target.id;
+
+        const feedbackMsg = isCorrect ? 'Correct!' : `Wrong! It was "${currentQuestion.target.word}"`;
 
         if (isCorrect) {
             setScore(score + 1);
@@ -111,12 +166,11 @@ export default function Quiz() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         }
 
-        // Update persistent stats for the word
         updateStats(currentQuestion.target.id, isCorrect);
 
         setFeedback({
             correct: isCorrect,
-            message: isCorrect ? 'Correct!' : `Wrong! It was "${currentQuestion.target.word}"`
+            message: feedbackMsg
         });
         setAppState('feedback');
     };
@@ -124,6 +178,7 @@ export default function Quiz() {
     const nextQuestion = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setAppState('playing');
+        setStreamedFeedback('');
         generateQuestion(gameMode); // Uses quizQueue from state
     };
 
@@ -175,6 +230,14 @@ export default function Quiz() {
                             <Text className="text-white text-2xl font-bold text-center">Written (Hard)</Text>
                             <Text className="text-rose-100 text-center text-base italic mt-1">Type the word from definition</Text>
                         </TouchableOpacity>
+
+                        <TouchableOpacity
+                            className="bg-violet-600 p-5 rounded-xl mb-6 shadow-lg shadow-violet-900/50 w-full"
+                            onPress={() => startGame('sentence_builder')}
+                        >
+                            <Text className="text-white text-2xl font-bold text-center">Use it in a Sentence</Text>
+                            <Text className="text-violet-100 text-center text-base italic mt-1">AI rates your usage</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             )}
@@ -211,32 +274,40 @@ export default function Quiz() {
                     </View>
 
                     {/* Display Question Prompt */}
-                    <View className="mb-8">
+                    <View className="mb-6">
                         <Text className="text-gray-400 text-lg mb-2 text-center">
-                            {gameMode === 'mc_word' ? 'What is the definition of:' : 'What word matches this definition?'}
+                            {gameMode === 'mc_word' ? 'What is the definition of:' :
+                                gameMode === 'sentence_builder' ? 'Use this word in a sentence:' : 'What word matches this definition?'}
                         </Text>
-                        <Text className="text-white text-3xl font-bold text-center p-4 bg-gray-800 rounded-xl">
-                            {gameMode === 'mc_word' ? currentQuestion.target.word : currentQuestion.target.definition}
-                        </Text>
+
+                        {gameMode === 'sentence_builder' && (
+                            <View className="mb-4">
+                                <Text className="text-white text-3xl font-bold text-center mb-2">{currentQuestion.target.word}</Text>
+                                <Text className="text-gray-300 text-lg text-center italic">"{currentQuestion.target.definition}"</Text>
+                            </View>
+                        )}
+
+                        {gameMode !== 'sentence_builder' && (
+                            <Text className="text-white text-3xl font-bold text-center p-4 bg-gray-800 rounded-xl">
+                                {gameMode === 'mc_word' ? currentQuestion.target.word : currentQuestion.target.definition}
+                            </Text>
+                        )}
                     </View>
 
                     {/* Input Area */}
-                    {gameMode === 'written' ? (
+                    {gameMode === 'written' || gameMode === 'sentence_builder' ? (
                         <View>
                             <TextInput
-                                className="bg-gray-800 text-white p-4 rounded-xl mb-6 text-xl border border-gray-700 text-center"
-                                placeholder="Type the word..."
+                                className={`bg-gray-800 text-white p-4 rounded-xl mb-6 text-xl border border-gray-700 ${gameMode === 'sentence_builder' ? 'text-left h-32' : 'text-center'}`}
+                                placeholder={gameMode === 'sentence_builder' ? "Type your sentence here..." : "Type the word..."}
                                 placeholderTextColor="#6b7280"
                                 value={textInput}
                                 onChangeText={setTextInput}
-                                editable={appState === 'playing'}
-                                autoCapitalize="none"
+                                editable={appState === 'playing' && !isEvaluating}
+                                autoCapitalize={gameMode === 'sentence_builder' ? "sentences" : "none"}
+                                multiline={gameMode === 'sentence_builder'}
+                                textAlignVertical={gameMode === 'sentence_builder' ? 'top' : 'center'}
                             />
-                            {appState === 'playing' && (
-                                <TouchableOpacity className="bg-blue-600 p-4 rounded-xl" onPress={() => checkAnswer(textInput)}>
-                                    <Text className="text-white text-xl font-bold text-center">Submit</Text>
-                                </TouchableOpacity>
-                            )}
                         </View>
                     ) : (
                         <View>
@@ -259,16 +330,44 @@ export default function Quiz() {
                     )}
 
                     {/* Feedback Area */}
-                    {appState === 'feedback' && (
-                        <View className="mt-8 items-center">
-                            <Text className={`text-2xl font-bold mb-4 ${feedback.correct ? 'text-green-400' : 'text-red-400'}`}>
-                                {feedback.message}
-                            </Text>
-                            <TouchableOpacity className="bg-blue-600 px-8 py-3 rounded-xl" onPress={nextQuestion}>
-                                <Text className="text-white text-xl font-bold">Next Question</Text>
-                            </TouchableOpacity>
+                    {appState === 'feedback' && feedback && (
+                        <View>
+                            {feedback.correct !== null && (
+                                <View className=" items-center w-full">
+                                    {/* Verdict Header */}
+                                    <Text className={`text-2xl font-bold mb-2 ${feedback.correct ? 'text-green-500' : 'text-red-500'}`}>
+                                        {feedback.correct ? 'Correct!' : 'Needs Improvement'}
+                                    </Text>
+
+                                    {/* Main Feedback Content (Streamed or Static) */}
+                                    <Text className="text-white text-lg mb-6 text-center leading-relaxed">
+                                        {gameMode === 'sentence_builder' ? streamedFeedback : feedback.message}
+                                    </Text>
+                                </View>
+                            )}
                         </View>
                     )}
+
+                    {/* Persistent Action Button */}
+                    <TouchableOpacity
+                        className={`px-8 py-4 rounded-xl w-full ${isEvaluating ? 'bg-gray-700' : 'bg-blue-600'} mt-4`}
+                        onPress={() => {
+                            if (appState === 'playing') {
+                                !isEvaluating && checkAnswer(gameMode === 'sentence_builder' || gameMode === 'written' ? textInput : selectedAnswer);
+                            } else {
+                                nextQuestion();
+                            }
+                        }}
+                        disabled={isEvaluating}
+                    >
+                        {isEvaluating ? (
+                            <ActivityIndicator size="small" color="#ffffff" />
+                        ) : (
+                            <Text className="text-white text-xl font-bold text-center">
+                                {appState === 'playing' ? "Submit" : (quizQueue.length === 0 ? "Finish" : "Next Question")}
+                            </Text>
+                        )}
+                    </TouchableOpacity>
                 </ScrollView>
             )}
         </View>

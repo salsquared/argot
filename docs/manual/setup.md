@@ -36,4 +36,12 @@ npx expo start
 
 ## Environment Variables
 
-Create a `.env` file in the root directory if necessary (refer to `.env.example`).
+Create a `.env` file in the root directory. You will need keys for both Google Gemini (for AI features) and Merriam-Webster (as a backup dictionary source).
+
+```env
+GEMINI_API_KEY=your_gemini_key_here
+MERRIAM_WEBSTER_KEY=your_mw_key_here
+```
+
+- **Gemini API**: Visit [Google AI Studio](https://aistudio.google.com/).
+- **Merriam-Webster**: Register at [DictionaryAPI.com](https://dictionaryapi.com/) for a "Collegiate Dictionary" key (free).

@@ -6,6 +6,7 @@ Argot is a premium, offline-first vocabulary learning application designed to he
 
 - **📚 Vocab Builder**: Easily add new words and definitions to your personal library.
 - **🧠 Interactive Quizzes**: Challenge yourself with various quiz modes to test your retention.
+- **🤖 AI Integration**: Receive instant feedback on your sentence usage with Google Gemini.
 - **🗂️ Word List**: Browse and review your collected words in a clean, organized interface.
 - **✨ Premium UI**: A polished dark-themed design using Tailwind CSS for a modern aesthetic.
 - **💾 Persistence**: Data is saved locally using Async Storage, ensuring your words are always with you.
@@ -60,6 +61,7 @@ To further enhance the dictionary, the following are being evaluated:
 ## Tech Stack
 
 - **Core**: [React Native](https://reactnative.dev/) with [Expo](https://expo.dev/)
+- **AI**: [Google Gemini](https://ai.google.dev/)
 - **Styling**: [NativeWind](https://www.nativewind.dev/) (Tailwind CSS)
 - **Navigation**: [React Navigation](https://reactnavigation.org/)
 - **Storage**: Async Storage
@@ -88,6 +90,15 @@ To further enhance the dictionary, the following are being evaluated:
    ```bash
    npx expo start
    ```
+
+4. **Setup Environment Variables**:
+   Create a `.env` file in the root directory and add your keys:
+   ```env
+   GEMINI_API_KEY=your_gemini_key_here
+   MERRIAM_WEBSTER_KEY=your_mw_key_here
+   ```
+   - Get a Gemini key from [Google AI Studio](https://aistudio.google.com/).
+   - Get a Merriam-Webster Collegiate Dictionary key from [DictionaryAPI.com](https://dictionaryapi.com/).
 
 ### Usage
 

@@ -183,12 +183,12 @@ export default function Quiz() {
     };
 
     return (
-        <View className="flex-1 bg-gray-900">
+        <View className="flex-1 bg-white dark:bg-gray-900">
             {appState === 'menu' && (
                 <View className="flex-1 justify-center items-center p-6">
                     <View className="w-full max-w-md relative">
                         <View className="absolute bottom-full left-0 right-0 mb-12">
-                            <Text className="text-white text-3xl font-bold text-center">Select Quiz Mode</Text>
+                            <Text className="text-gray-900 dark:text-white text-3xl font-bold text-center">Select Quiz Mode</Text>
                         </View>
 
                         <TouchableOpacity
@@ -245,9 +245,9 @@ export default function Quiz() {
             {appState === 'finished' && (
                 <View className="flex-1 justify-center items-center p-6">
                     <View className="w-full max-w-md items-center" style={{ marginTop: -80 }}>
-                        <Text className="text-white text-4xl font-bold mb-4 text-center">Quiz Complete!</Text>
-                        <Text className="text-gray-300 text-xl mb-8 text-center">
-                            You scored <Text className="text-green-400 font-bold">{score}</Text> out of <Text className="font-bold">{sessionTotal}</Text>
+                        <Text className="text-gray-900 dark:text-white text-4xl font-bold mb-4 text-center">Quiz Complete!</Text>
+                        <Text className="text-gray-600 dark:text-gray-300 text-xl mb-8 text-center">
+                            You scored <Text className="text-green-600 dark:text-green-400 font-bold">{score}</Text> out of <Text className="font-bold">{sessionTotal}</Text>
                         </Text>
                         <TouchableOpacity className="bg-blue-600 px-8 py-3 rounded-xl" onPress={() => {
                             console.log("Back to Menu pressed");
@@ -261,9 +261,9 @@ export default function Quiz() {
             )}
 
             {(appState === 'playing' || appState === 'feedback') && (
-                <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-gray-900 p-6">
+                <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="bg-white dark:bg-gray-900 p-6">
                     <View className="flex-row justify-between mb-8 mt-4">
-                        <Text className="text-gray-400">Score: {score}</Text>
+                        <Text className="text-gray-500 dark:text-gray-400">Score: {score}</Text>
                         <TouchableOpacity onPress={() => {
                             setAppState('menu');
                             setGameMode(null);
@@ -275,20 +275,20 @@ export default function Quiz() {
 
                     {/* Display Question Prompt */}
                     <View className="mb-6">
-                        <Text className="text-gray-400 text-lg mb-2 text-center">
+                        <Text className="text-gray-600 dark:text-gray-400 text-lg mb-2 text-center">
                             {gameMode === 'mc_word' ? 'What is the definition of:' :
                                 gameMode === 'sentence_builder' ? 'Use this word in a sentence:' : 'What word matches this definition?'}
                         </Text>
 
                         {gameMode === 'sentence_builder' && (
                             <View className="mb-4">
-                                <Text className="text-white text-3xl font-bold text-center mb-2">{currentQuestion.target.word}</Text>
-                                <Text className="text-gray-300 text-lg text-center italic">"{currentQuestion.target.definition}"</Text>
+                                <Text className="text-gray-900 dark:text-white text-3xl font-bold text-center mb-2">{currentQuestion.target.word}</Text>
+                                <Text className="text-gray-600 dark:text-gray-300 text-lg text-center italic">"{currentQuestion.target.definition}"</Text>
                             </View>
                         )}
 
                         {gameMode !== 'sentence_builder' && (
-                            <Text className="text-white text-3xl font-bold text-center p-4 bg-gray-800 rounded-xl">
+                            <Text className="text-gray-900 dark:text-white text-3xl font-bold text-center p-4 bg-gray-100 dark:bg-gray-800 rounded-xl">
                                 {gameMode === 'mc_word' ? currentQuestion.target.word : currentQuestion.target.definition}
                             </Text>
                         )}
@@ -298,7 +298,7 @@ export default function Quiz() {
                     {gameMode === 'written' || gameMode === 'sentence_builder' ? (
                         <View>
                             <TextInput
-                                className={`bg-gray-800 text-white p-4 rounded-xl mb-6 text-xl border border-gray-700 ${gameMode === 'sentence_builder' ? 'text-left h-32' : 'text-center'}`}
+                                className={`bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white p-4 rounded-xl mb-6 text-xl border border-gray-200 dark:border-gray-700 ${gameMode === 'sentence_builder' ? 'text-left h-32' : 'text-center'}`}
                                 placeholder={gameMode === 'sentence_builder' ? "Type your sentence here..." : "Type the word..."}
                                 placeholderTextColor="#6b7280"
                                 value={textInput}
@@ -316,12 +316,12 @@ export default function Quiz() {
                                     key={index}
                                     disabled={appState !== 'playing'}
                                     className={`p-4 rounded-xl mb-3 border ${appState === 'feedback'
-                                        ? (option.id === currentQuestion.target.id ? 'bg-green-600 border-green-600' : (option.id === selectedAnswer?.id ? 'bg-red-600 border-red-600' : 'bg-gray-800 border-gray-700'))
-                                        : 'bg-gray-800 border-gray-700 active:bg-blue-900'
+                                        ? (option.id === currentQuestion.target.id ? 'bg-green-600 border-green-600' : (option.id === selectedAnswer?.id ? 'bg-red-600 border-red-600' : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700'))
+                                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 active:bg-blue-100 dark:active:bg-blue-900'
                                         }`}
                                     onPress={() => checkAnswer(option)}
                                 >
-                                    <Text className="text-white text-lg">
+                                    <Text className={`text-lg ${appState === 'feedback' && (option.id === currentQuestion.target.id || option.id === selectedAnswer?.id) ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                                         {gameMode === 'mc_word' ? option.definition : option.word}
                                     </Text>
                                 </TouchableOpacity>
@@ -340,7 +340,7 @@ export default function Quiz() {
                                     </Text>
 
                                     {/* Main Feedback Content (Streamed or Static) */}
-                                    <Text className="text-white text-lg mb-6 text-center leading-relaxed">
+                                    <Text className="text-gray-900 dark:text-white text-lg mb-6 text-center leading-relaxed">
                                         {gameMode === 'sentence_builder' ? streamedFeedback : feedback.message}
                                     </Text>
                                 </View>

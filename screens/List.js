@@ -183,7 +183,7 @@ export default function List({ navigation }) {
 
         return (
             <TouchableOpacity
-                className={`bg-gray-800 p-4 mb-3 rounded-xl border ${isSelected ? 'border-blue-500 bg-gray-700' : 'border-gray-700'} flex-row items-center`}
+                className={`bg-gray-50 dark:bg-gray-800 p-4 mb-3 rounded-xl border ${isSelected ? 'border-blue-500 bg-blue-50 dark:bg-gray-700' : 'border-gray-200 dark:border-gray-700'} flex-row items-center`}
                 onLongPress={() => !isEditing && startEditingItem(item)} // Allow long press to edit in normal mode too? Or maybe just context menu. 
                 // Original was delete. Let's keep it clean: Long press delete in normal mode? 
                 // User said "Edit button... allow to select multiple... delete or edit".
@@ -207,11 +207,11 @@ export default function List({ navigation }) {
 
                 <View className="flex-1 mr-2">
                     <View className="flex-row items-center mb-1">
-                        <Text className="text-white text-xl font-bold text-blue-400 mr-2">{item.word}</Text>
+                        <Text className="text-gray-900 dark:text-white text-xl font-bold text-blue-600 dark:text-blue-400 mr-2">{item.word}</Text>
 
                         <View className="flex-row items-center">
-                            <View className="bg-gray-700 px-2 py-0.5 rounded-md mr-2">
-                                <Text className="text-gray-300 text-xs font-bold">
+                            <View className="bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-md mr-2">
+                                <Text className="text-gray-700 dark:text-gray-300 text-xs font-bold">
                                     {LANGUAGES.find(l => l.value === item.language)?.flag || '🇬🇧'} {item.language || 'EN'}
                                 </Text>
                             </View>
@@ -225,7 +225,7 @@ export default function List({ navigation }) {
                             )}
                         </View>
                     </View>
-                    <Text className="text-gray-300 text-base">{item.definition}</Text>
+                    <Text className="text-gray-600 dark:text-gray-300 text-base">{item.definition}</Text>
                 </View>
 
                 {isEditing && (
@@ -236,7 +236,7 @@ export default function List({ navigation }) {
                         }}
                         className="p-2"
                     >
-                        <Feather name="edit-2" size={20} color="white" />
+                        <Feather name="edit-2" size={20} color="#6b7280" />
                     </TouchableOpacity>
                 )}
             </TouchableOpacity>
@@ -310,7 +310,7 @@ export default function List({ navigation }) {
     };
 
     return (
-        <View className="flex-1 bg-gray-900">
+        <View className="flex-1 bg-white dark:bg-gray-900">
             {isMigrating && (
                 <View className="absolute z-10 inset-0 bg-black/50 justify-center items-center">
                     <ActivityIndicator size="large" color="#3b82f6" />
@@ -333,9 +333,9 @@ export default function List({ navigation }) {
                         IS_DEV ? (
                             <TouchableOpacity
                                 onPress={migrateData}
-                                className="bg-gray-800 p-3 rounded-xl mb-4 border border-gray-700 items-center"
+                                className="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl mb-4 border border-gray-200 dark:border-gray-700 items-center"
                             >
-                                <Text className="text-blue-400 font-bold">Refresh Metadata</Text>
+                                <Text className="text-blue-600 dark:text-blue-400 font-bold">Refresh Metadata</Text>
                             </TouchableOpacity>
                         ) : null
                     }
@@ -344,7 +344,7 @@ export default function List({ navigation }) {
 
             {/* Bottom Bar for Delete */}
             {isEditing && selectedIds.size > 0 && (
-                <View className="absolute bottom-0 left-0 right-0 p-6 bg-gray-800 border-t border-gray-700 items-center">
+                <View className="absolute bottom-0 left-0 right-0 p-6 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 items-center">
                     <TouchableOpacity
                         onPress={deleteSelected}
                         className="bg-red-600 px-8 py-3 rounded-xl"
@@ -365,18 +365,18 @@ export default function List({ navigation }) {
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     className="flex-1 justify-end bg-black/60"
                 >
-                    <View className="bg-gray-900 rounded-t-3xl p-6 h-auto max-h-[90%]">
+                    <View className="bg-white dark:bg-gray-900 rounded-t-3xl p-6 h-auto max-h-[90%]">
                         <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-white text-xl font-bold">Edit Word</Text>
+                            <Text className="text-gray-900 dark:text-white text-xl font-bold">Edit Word</Text>
                             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
                                 <Text className="text-blue-400 text-lg">Cancel</Text>
                             </TouchableOpacity>
                         </View>
 
-                        <Text className="text-gray-400 mb-2 font-bold">Word</Text>
+                        <Text className="text-gray-500 dark:text-gray-400 mb-2 font-bold">Word</Text>
                         <View className="relative">
                             <TextInput
-                                className="bg-gray-800 text-white p-4 rounded-xl mb-4 text-lg border border-gray-700 focus:border-blue-500"
+                                className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white p-4 rounded-xl mb-4 text-lg border border-gray-200 dark:border-gray-700 focus:border-blue-500"
                                 value={editWordText}
                                 onChangeText={setEditWordText}
                             />
@@ -397,7 +397,7 @@ export default function List({ navigation }) {
                         </View>
 
                         <TextInput
-                            className="bg-gray-800 text-white p-4 rounded-xl mb-6 text-lg border border-gray-700 h-32 focus:border-blue-500"
+                            className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white p-4 rounded-xl mb-6 text-lg border border-gray-200 dark:border-gray-700 h-32 focus:border-blue-500"
                             multiline
                             textAlignVertical="top"
                             value={editDefinitionText}
@@ -422,22 +422,22 @@ export default function List({ navigation }) {
                 onRequestClose={() => setShowEditDefinitionModal(false)}
             >
                 <View className="flex-1 justify-end bg-black/50">
-                    <View className="bg-gray-900 rounded-t-3xl p-6 h-3/4">
+                    <View className="bg-white dark:bg-gray-900 rounded-t-3xl p-6 h-3/4">
                         <View className="flex-row justify-between items-center mb-4">
-                            <Text className="text-white text-xl font-bold">Select Definition</Text>
+                            <Text className="text-gray-900 dark:text-white text-xl font-bold">Select Definition</Text>
                             <TouchableOpacity onPress={() => setShowEditDefinitionModal(false)}>
                                 <Text className="text-blue-400 text-lg">Close</Text>
                             </TouchableOpacity>
                         </View>
 
-                        <Text className="text-gray-400 mb-4 italic">Select definition for "{editWordText}"</Text>
+                        <Text className="text-gray-500 dark:text-gray-400 mb-4 italic">Select definition for "{editWordText}"</Text>
 
                         <FlatList
                             data={availableEditDefinitions}
                             keyExtractor={(item, index) => index.toString()}
                             renderItem={({ item }) => (
                                 <TouchableOpacity
-                                    className={`p-4 mb-3 rounded-xl bg-gray-800 border ${editDefinitionText === item.definition ? 'border-blue-500' : 'border-gray-700'}`}
+                                    className={`p-4 mb-3 rounded-xl bg-gray-100 dark:bg-gray-800 border ${editDefinitionText === item.definition ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`}
                                     onPress={() => {
                                         setEditDefinitionText(item.definition);
                                         setEditPartOfSpeech(item.partOfSpeech);
@@ -453,7 +453,7 @@ export default function List({ navigation }) {
                                             </View>
                                         )}
                                     </View>
-                                    <Text className="text-white text-base leading-5 mb-1">{item.definition}</Text>
+                                    <Text className="text-gray-900 dark:text-white text-base leading-5 mb-1">{item.definition}</Text>
                                     {item.example && (
                                         <Text className="text-gray-500 text-sm italic">"{item.example}"</Text>
                                     )}

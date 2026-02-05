@@ -23,9 +23,9 @@ export default function Home({ navigation }) {
     );
 
     return (
-        <View className="flex-1 bg-gray-900 items-center justify-center p-6">
-            <Text className="text-4xl font-bold text-white mb-2">Argot</Text>
-            <Text className="text-gray-400 mb-10">{wordCount} words collected</Text>
+        <View className="flex-1 bg-white dark:bg-gray-900 items-center justify-center p-6">
+            <Text className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Argot</Text>
+            <Text className="text-gray-500 dark:text-gray-400 mb-10">{wordCount} words collected</Text>
 
             <TouchableOpacity
                 className="bg-blue-600 w-full p-4 rounded-xl mb-4 items-center"
@@ -35,7 +35,7 @@ export default function Home({ navigation }) {
             </TouchableOpacity>
 
             <TouchableOpacity
-                className="bg-gray-800 w-full p-4 rounded-xl mb-4 items-center"
+                className="bg-gray-800 dark:bg-gray-700 w-full p-4 rounded-xl mb-4 items-center"
                 onPress={() => navigation.navigate('List')}
             >
                 <Text className="text-white text-lg font-bold">My Vocabulary</Text>
@@ -46,6 +46,13 @@ export default function Home({ navigation }) {
                 onPress={() => navigation.navigate('Quiz')}
             >
                 <Text className="text-white text-lg font-bold">Start Quiz</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                className="bg-gray-200 dark:bg-gray-800 w-full p-4 rounded-xl mb-4 items-center mt-4"
+                onPress={() => navigation.navigate('Settings')}
+            >
+                <Text className="text-gray-900 dark:text-white text-lg font-bold">Settings</Text>
             </TouchableOpacity>
         </View>
     );

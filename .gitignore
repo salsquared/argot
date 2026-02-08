@@ -45,3 +45,5 @@ yarn-error.*
 
 # Agent
 .agent/
+
+argot*.json

@@ -18,6 +18,7 @@
     },
     "android": {
       "package": "com.salsquared.argot",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
